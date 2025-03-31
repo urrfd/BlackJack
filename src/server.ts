@@ -88,7 +88,10 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const pathname = url.pathname;
 
+<<<<<<< Updated upstream
     // WARN bad code refactor
+=======
+>>>>>>> Stashed changes
     if (pathname === "/") {
       const file = await Deno.open("./src/static/index.html", { read: true });
       return new Response(file.readable);
@@ -102,6 +105,7 @@ Deno.serve(async (req) => {
     }
     if (pathname.startsWith("/cards")) {
       return serveDir(req, {
+<<<<<<< Updated upstream
         fsRoot: "assets/cards",
         urlRoot: "cards",
       });
@@ -118,6 +122,12 @@ Deno.serve(async (req) => {
         urlRoot: "decks",
       });
     }
+=======
+        fsRoot: "cards",
+        urlRoot: "cards",
+      });
+    }
+>>>>>>> Stashed changes
     return new Response();
   }
 

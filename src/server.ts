@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const pathname = url.pathname;
 
+    // WARN bad code refactor
     if (pathname === "/") {
       const file = await Deno.open("./src/static/index.html", { read: true });
       return new Response(file.readable);
@@ -101,8 +102,20 @@ Deno.serve(async (req) => {
     }
     if (pathname.startsWith("/cards")) {
       return serveDir(req, {
-        fsRoot: "cards",
+        fsRoot: "assets/cards",
         urlRoot: "cards",
+      });
+    }
+    if (pathname.startsWith("/money")) {
+      return serveDir(req, {
+        fsRoot: "assets/money",
+        urlRoot: "money",
+      });
+    }
+    if (pathname.startsWith("/decks")) {
+      return serveDir(req, {
+        fsRoot: "assets/decks",
+        urlRoot: "decks",
       });
     }
     return new Response();

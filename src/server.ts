@@ -1,4 +1,4 @@
-const MAX_PLAYERS = 6;
+const MAX_PLAYERS = 4;
 const BLACKJACK = 21;
 
 type Suit =
@@ -25,6 +25,12 @@ class Card {
     }
     return this.rank;
   }
+
+  public image(): string {
+    const suit = this.suit.charAt(0).toUpperCase();
+
+    return `cards/${this.rank}-${suit}.png`;
+  }
 }
 // TODO pop the last card to deal
 //
@@ -34,8 +40,12 @@ const Dealer = () => {
 type ClientAction =
   | "doubleDown"
   | "split"
-  | "insurance"
-  | "evenMoney";
+  // | "insurance"
+  | "evenMoney"
+  | "hit" // ?
+  | "stay" // ?
+  | "put" // ?
+;
 
 type Player = {
   socket: WebSocket;
@@ -65,11 +75,23 @@ function shuffle<T>(arr: T[]) {
 }
 
 const deck = shufflededDeck();
+console.assert(deck.length == 52);
+
 const players: Player[] = [];
 
-Deno.serve((req) => {
+console.log(deck);
+
+Deno.serve(async (req) => {
   if (req.headers.get("upgrade") != "websocket") {
-    return new Response(null, { status: 501 });
+    const url = new URL(req.url);
+    const filepath = decodeURIComponent(url.pathname);
+
+    try {
+      const file = await Deno.open("." + filepath, { read: true });
+      return new Response(file.readable);
+    } catch {
+      return new Response("404 Not Found", { status: 404 });
+    }
   }
 
   const { socket, response } = Deno.upgradeWebSocket(req);

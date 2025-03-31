@@ -1,3 +1,5 @@
+import { serveDir } from "@std/http/file-server";
+
 const MAX_PLAYERS = 4;
 const BLACKJACK = 21;
 
@@ -84,14 +86,26 @@ console.log(deck);
 Deno.serve(async (req) => {
   if (req.headers.get("upgrade") != "websocket") {
     const url = new URL(req.url);
-    const filepath = decodeURIComponent(url.pathname);
+    const pathname = url.pathname;
 
-    try {
-      const file = await Deno.open("." + filepath, { read: true });
+    if (pathname === "/") {
+      const file = await Deno.open("./src/static/index.html", { read: true });
       return new Response(file.readable);
-    } catch {
-      return new Response("404 Not Found", { status: 404 });
     }
+
+    if (pathname.startsWith("/static")) {
+      return serveDir(req, {
+        fsRoot: "src/static",
+        urlRoot: "static",
+      });
+    }
+    if (pathname.startsWith("/cards")) {
+      return serveDir(req, {
+        fsRoot: "cards",
+        urlRoot: "cards",
+      });
+    }
+    return new Response();
   }
 
   const { socket, response } = Deno.upgradeWebSocket(req);

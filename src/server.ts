@@ -88,10 +88,6 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const pathname = url.pathname;
 
-<<<<<<< Updated upstream
-    // WARN bad code refactor
-=======
->>>>>>> Stashed changes
     if (pathname === "/") {
       const file = await Deno.open("./src/static/index.html", { read: true });
       return new Response(file.readable);
@@ -103,31 +99,12 @@ Deno.serve(async (req) => {
         urlRoot: "static",
       });
     }
-    if (pathname.startsWith("/cards")) {
+    if (pathname.startsWith("/assets")) {
       return serveDir(req, {
-<<<<<<< Updated upstream
-        fsRoot: "assets/cards",
-        urlRoot: "cards",
+        fsRoot: "assets",
+        urlRoot: "assets",
       });
     }
-    if (pathname.startsWith("/money")) {
-      return serveDir(req, {
-        fsRoot: "assets/money",
-        urlRoot: "money",
-      });
-    }
-    if (pathname.startsWith("/decks")) {
-      return serveDir(req, {
-        fsRoot: "assets/decks",
-        urlRoot: "decks",
-      });
-    }
-=======
-        fsRoot: "cards",
-        urlRoot: "cards",
-      });
-    }
->>>>>>> Stashed changes
     return new Response();
   }
 
@@ -138,7 +115,7 @@ Deno.serve(async (req) => {
     if (players.length > MAX_PLAYERS) {
       socket.send("max players reached");
       console.log(
-        `A ${MAX_PLAYERS + 1}:th player joined but its ower the maximum`,
+        `A ${MAX_PLAYERS + 1}:th player joined but its over the maximum`,
       );
     } else {
       players.push({ socket });

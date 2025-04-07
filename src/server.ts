@@ -1,7 +1,12 @@
 import { serveDir } from "@std/http/file-server";
+import { assertArgs } from "https://jsr.io/@std/path/1.0.8/_common/relative.ts";
 
 const MAX_PLAYERS = 4;
 const BLACKJACK = 21;
+const STARTING_MONEY = 20;
+const MINIUMUM_BET = 1;
+
+let number_of_rounds = 0;
 
 type Suit =
   | "clubs" // (♣)
@@ -49,11 +54,94 @@ type ClientAction =
   | "put" // ?
 ;
 
+// TODO improve name
+type HitStand =
+  | null
+  | "stand" // ✋
+  | "hit"; // 👉
+
+// I do not like having enum as string
+type Phase =
+  | "deal"
+  | "betting"
+  | "stand_or_hit"
+  | "special_action";
+
+let current_phase: Phase = "deal";
+
+function actOnPhase(phase: Phase) {
+  switch (phase) {
+    case "deal":
+      for (const player of players) {
+        const card_draw = deck.pop();
+        console.assert(card_draw !== undefined); // probably impossible to have no cards left
+        if (
+          card_draw && (player.hitstand === "hit" || player.hitstand === null)
+        ) {
+          player.cards.push(card_draw);
+        }
+      }
+      phase = "betting";
+      break;
+    case "betting": {
+      const allPlayersBet = players.every((player) => player.bet !== 0);
+      if (allPlayersBet) {
+        phase = "deal";
+      }
+
+      break;
+    }
+    case "stand_or_hit": {
+      const allPlayersHitStand = players.every((player) =>
+        player.hitstand !== null
+      );
+      if (allPlayersHitStand) {
+        phase = "deal";
+      }
+      break;
+    }
+    case "special_action":
+      console.warn("actions not implemented!");
+      break;
+  }
+}
+
 type Player = {
   socket: WebSocket;
-  // cards: Card[],
-  // chips
+  cards: Card[];
+  money: number; // dollars
+  hitstand: HitStand;
+  bet: number;
+  // powerups: number;
+  // perma_powerups: number;
 };
+
+// # Powerups categories
+// ## Activated when you buy them
+//
+//
+//
+//
+//
+//
+// ## Activated after conditions of time after you bough them
+//  price 10 dollars, get 15 next shop time
+//
+//
+//
+// ## Perma active after you buy
+//
+// 19 is also 21
+//
+//
+//
+// # Phases
+// - players bets
+// - dealer deals cards,
+// - special actions
+// - stand or  "mer kort" (other name)
+// - dealer deals cards
+// (repeat ) until done
 
 function shufflededDeck(): Card[] {
   const deck: Card[] = [];
@@ -79,12 +167,13 @@ function shuffle<T>(arr: T[]) {
 const deck = shufflededDeck();
 console.assert(deck.length == 52);
 
-const players: Player[] = [];
+let players: Player[] = [];
 
 console.log(deck);
 
 Deno.serve(async (req) => {
   if (req.headers.get("upgrade") != "websocket") {
+    // serve static files
     const url = new URL(req.url);
     const pathname = url.pathname;
 
@@ -118,12 +207,22 @@ Deno.serve(async (req) => {
         `A ${MAX_PLAYERS + 1}:th player joined but its over the maximum`,
       );
     } else {
-      players.push({ socket });
+      players.push({
+        socket,
+        cards: [],
+        money: STARTING_MONEY,
+        hitstand: null,
+        bet: 0,
+      });
     }
   };
 
   socket.onclose = () => {
-    // remove client from player  if player
+    console.warn(socket, "closed connection!");
+    // remove player from players
+    players = players.filter((p) => { //idk if this safe,  egil (the client) actually wants us to be able to reconnect
+      socket !== p.socket;
+    });
   };
   socket.onmessage = (msg) => {
     console.log(msg);

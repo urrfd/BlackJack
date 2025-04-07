@@ -1,5 +1,8 @@
-body {
-  
-    background: radial-gradient(#111, #1a1a1a);
-
-  }
+html {
+  background-image: url("/assets/misc/table.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  height: 100%;
+  background-color: #0d643a;
+  /* background: radial-gradient(#111, #1a1a1a);  will be used for loby and the shop */
+}

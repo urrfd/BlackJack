@@ -20,7 +20,7 @@ class Card {
     public rank: number, // ace is 1 king is 13
     public suit: Suit,
   ) {}
-  public value(): number | Ess {
+  public getValue(): number | Ess {
     if (this.rank === 1) { // ace
       return {
         high: 11,
@@ -70,30 +70,42 @@ type Phase =
 
 let current_phase: Phase = "deal";
 
-// function handValue(cards: Card[]): number {
-//   let normal: number[] = [];
-//   let ess: Ess[]  =  [];
-//   for (const card of cards) {
-//     const value = card.value;
-//     switch (typeof value) {
-//       case "number":
-//         normal.push(value)
-//         break;
-//       case "object": // ess
-//         ess.push(value)
-//         break;
-//     }
-//   }
-//   let sum = normal.;
+function handValue(cards: Card[]): number | "bust" {
+  const normalCards: number[] = [];
+  const esses: Ess[] = [];
+  for (const card of cards) {
+    const value = card.getValue();
+    switch (typeof value) {
+      case "number":
+        normalCards.push(value);
+        break;
+      case "object": // ess
+        esses.push(value);
+        break;
+    }
+  }
+  const normalSum = normalCards.reduce((a, b) => a + b, 0);
 
-//   if (sum >= BLACKJACK) {
-//     if
-//     sum -=
+  let sum = normalSum;
 
-//   }
+  for (const ess of esses) {
+    sum += ess.high;
+  }
+  if (sum > BLACKJACK) { // bust
+    for (const ess of esses) {
+      const diff = ess.high - ess.low; // stupid I know...
 
-//   return sum;
-// }
+      sum -= diff;
+      if (sum <= BLACKJACK) {
+        break;
+      }
+    }
+    if (sum > BLACKJACK) {
+      return "bust";
+    }
+  }
+  return sum;
+}
 
 function actOnPhase(phase: Phase) {
   switch (phase) {

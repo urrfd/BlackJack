@@ -1,5 +1,4 @@
 import { serveDir } from "@std/http/file-server";
-import { assertArgs } from "https://jsr.io/@std/path/1.0.8/_common/relative.ts";
 
 const MAX_PLAYERS = 4;
 const BLACKJACK = 21;
@@ -14,12 +13,14 @@ type Suit =
   | "hearts" // (♥)
   | "spades"; // (♠)
 
+type Ess = { high: number; low: number };
+
 class Card {
   constructor(
     public rank: number, // ace is 1 king is 13
     public suit: Suit,
   ) {}
-  public value(): number | { high: number; low: number } {
+  public value(): number | Ess {
     if (this.rank === 1) { // ace
       return {
         high: 11,
@@ -68,6 +69,31 @@ type Phase =
   | "special_action";
 
 let current_phase: Phase = "deal";
+
+// function handValue(cards: Card[]): number {
+//   let normal: number[] = [];
+//   let ess: Ess[]  =  [];
+//   for (const card of cards) {
+//     const value = card.value;
+//     switch (typeof value) {
+//       case "number":
+//         normal.push(value)
+//         break;
+//       case "object": // ess
+//         ess.push(value)
+//         break;
+//     }
+//   }
+//   let sum = normal.;
+
+//   if (sum >= BLACKJACK) {
+//     if
+//     sum -=
+
+//   }
+
+//   return sum;
+// }
 
 function actOnPhase(phase: Phase) {
   switch (phase) {
@@ -223,6 +249,7 @@ Deno.serve(async (req) => {
     players = players.filter((p) => { //idk if this safe,  egil (the client) actually wants us to be able to reconnect
       socket !== p.socket;
     });
+    // maybe could use splice and indexOf
   };
   socket.onmessage = (msg) => {
     console.log(msg);

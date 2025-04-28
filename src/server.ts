@@ -59,6 +59,9 @@ type ClientAction =
   | { type: "put" }
   | { type: "bet"; amount: number };
 
+// TODO create this, preferably so js also can understand using something like
+type ServerEvent = {};
+
 // TODO improve name
 type HitStand =
   | null

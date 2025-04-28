@@ -7,6 +7,8 @@ const MINIUMUM_BET = 1;
 
 let number_of_rounds = 0;
 
+let started: boolean = false;
+
 type Suit =
   | "clubs" // (♣)
   | "diamonds" // (♦)
@@ -20,7 +22,7 @@ class Card {
     public rank: number, // ace is 1 king is 13
     public suit: Suit,
   ) {}
-  public value(): number | Ess {
+  public getValue(): number | Ess {
     if (this.rank === 1) { // ace
       return {
         high: 11,
@@ -40,20 +42,22 @@ class Card {
     return `cards/${this.rank}-${suit}.png`;
   }
 }
-// TODO pop the last card to deal
-//
-const Dealer = () => {
-};
+// function compare_with_dealer(dealer, playerHand: HandValue): {};
+
+// const Dealer = () => ({
+//   hand: [],
+// });
+
 // WARN should be validated to happen at the correct place and time
 type ClientAction =
-  | "doubleDown"
-  | "split"
   // | "insurance"
-  | "evenMoney"
-  | "hit" // ?
-  | "stay" // ?
-  | "put" // ?
-;
+  | { type: "doubleDown" }
+  | { type: "split" }
+  | { type: "evenMoney" }
+  | { type: "hit" }
+  | { type: "stand" }
+  | { type: "put" }
+  | { type: "bet"; amount: number };
 
 // TODO improve name
 type HitStand =
@@ -64,40 +68,57 @@ type HitStand =
 // I do not like having enum as string
 type Phase =
   | "deal"
-  | "betting"
   | "stand_or_hit"
-  | "special_action";
+  | "special_action"
+  | "stand_or_hit"
+  | "compare";
 
-let current_phase: Phase = "deal";
+let phase: Phase = "deal";
 
-// function handValue(cards: Card[]): number {
-//   let normal: number[] = [];
-//   let ess: Ess[]  =  [];
-//   for (const card of cards) {
-//     const value = card.value;
-//     switch (typeof value) {
-//       case "number":
-//         normal.push(value)
-//         break;
-//       case "object": // ess
-//         ess.push(value)
-//         break;
-//     }
-//   }
-//   let sum = normal.;
+type HandValue = number | "bust";
+function handValue(cards: Card[]): HandValue {
+  const normalCards: number[] = [];
+  const esses: Ess[] = [];
+  for (const card of cards) {
+    const value = card.getValue();
+    switch (typeof value) {
+      case "number":
+        normalCards.push(value);
+        break;
+      case "object": // ess
+        esses.push(value);
+        break;
+    }
+  }
+  const normalSum = normalCards.reduce((a, b) => a + b, 0);
 
-//   if (sum >= BLACKJACK) {
-//     if
-//     sum -=
+  let sum = normalSum;
 
-//   }
+  for (const ess of esses) {
+    sum += ess.high; // 11
+  }
+  // should probably use a while loop instrad
+  if (sum > BLACKJACK) {
+    for (const ess of esses) {
+      const diff = ess.high - ess.low; //10 stupid I know...
 
-//   return sum;
-// }
+      sum -= diff;
+      if (sum <= BLACKJACK) {
+        break;
+      }
+    }
+    if (sum > BLACKJACK) {
+      return "bust";
+    }
+  }
+  return sum;
+}
 
-function actOnPhase(phase: Phase) {
+function actOnPhase() {
   switch (phase) {
     case "deal":
+      // we will also need to deal at the start of the game
+
       for (const player of players) {
         const card_draw = deck.pop();
         console.assert(card_draw !== undefined); // probably impossible to have no cards left
@@ -107,13 +128,10 @@ function actOnPhase(phase: Phase) {
           player.cards.push(card_draw);
         }
       }
-      phase = "betting";
       break;
-    case "betting": {
-      const allPlayersBet = players.every((player) => player.bet !== 0);
-      if (allPlayersBet) {
-        phase = "deal";
-      }
+
+    case "compare": { // IDK if this should be a phase
+      unimplemented();
 
       break;
     }
@@ -225,34 +243,88 @@ Deno.serve(async (req) => {
 
   const { socket, response } = Deno.upgradeWebSocket(req);
 
+  const player: Player = {
+    socket,
+    cards: [],
+    money: STARTING_MONEY,
+    hitstand: null,
+    bet: 0,
+  };
   socket.onopen = () => {
     console.log("client connected");
+
     if (players.length > MAX_PLAYERS) {
-      socket.send("max players reached");
+      // socket.send("max players reached"); // we need to create server side message type
+      // TODO inform the player
       console.log(
         `A ${MAX_PLAYERS + 1}:th player joined but its over the maximum`,
       );
-    } else {
-      players.push({
-        socket,
-        cards: [],
-        money: STARTING_MONEY,
-        hitstand: null,
-        bet: 0,
-      });
+      return;
     }
+    if (started) {
+      // TODO inform the player
+      console.log("a player tried to join but the game is already running!");
+      return;
+    }
+    players.push(player);
   };
 
   socket.onclose = () => {
     console.warn(socket, "closed connection!");
     // remove player from players
-    players = players.filter((p) => { //idk if this safe,  egil (the client) actually wants us to be able to reconnect
+    players = players.filter((p) => {
       socket !== p.socket;
     });
-    // maybe could use splice and indexOf
   };
   socket.onmessage = (msg) => {
     console.log(msg);
+
+    const action = JSON.parse(msg.data) as ClientAction;
+
+    switch (action.type) {
+      case "doubleDown":
+        unimplemented();
+        break;
+      case "split":
+        unimplemented();
+        break;
+      case "evenMoney":
+        unimplemented();
+        break;
+      case "bet": {
+        const amount = action.amount;
+        if (amount < MINIUMUM_BET) {
+          console.warn("A player tried to bet less than ", MINIUMUM_BET);
+          break;
+        }
+        player.bet = action.amount;
+        const allPlayersBet = players.every((player) => player.bet !== 0);
+        if (allPlayersBet) {
+          phase = "deal";
+          actOnPhase();
+          phase = "stand_or_hit";
+        }
+        break;
+      }
+      case "hit":
+        if (phase === "stand_or_hit") {
+          player.hitstand = "hit";
+        }
+        break;
+      case "stand":
+        if (phase === "stand_or_hit") {
+          player.hitstand = "stand";
+        }
+        break;
+      case "put":
+        unimplemented();
+        break;
+      default:
+        console.warn("Client sent an invalid action");
+    }
+
+    // everthing is initiated by the players, probably not the best way to do it...
+    actOnPhase();
   };
   socket.onerror = (e) => {
     console.error(e);
@@ -260,3 +332,7 @@ Deno.serve(async (req) => {
 
   return response;
 });
+
+function unimplemented() {
+  throw new Error("Not implemented");
+}

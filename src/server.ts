@@ -51,6 +51,7 @@ class Card {
 // WARN should be validated to happen at the correct place and time
 type ClientAction =
   // | "insurance"
+  | { type: "restartGame" } // temporary
   | { type: "doubleDown" }
   | { type: "split" }
   | { type: "evenMoney" }
@@ -285,6 +286,10 @@ Deno.serve(async (req) => {
     const action = JSON.parse(msg.data) as ClientAction;
 
     switch (action.type) {
+      case "restartGame":
+        // should probably only be the first player that can do this
+        unimplemented();
+        break;
       case "doubleDown":
         unimplemented();
         break;

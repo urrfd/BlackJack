@@ -6,11 +6,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Vingt</title>
   <link rel="stylesheet" href="/static/style.css" />
-
+    <!--js framework-->
+  <script src="https://unpkg.com/petite-vue" defer init></script>
 </head>
 
 <body>
 
+  <div v-scope="{ count: 0 }">
+   {{ count }}
+   <button @click="count++">inc</button>
+  </div>
 
 
   <!-- <div class="death-background"> 
